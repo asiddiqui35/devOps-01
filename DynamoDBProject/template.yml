@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources :
+  RestApi :
+    Type : AWS::ApiGateway::RestApi
+    Properties :
+      Name : myApi
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+  APGResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref RestApi
+      ParentId: !GetAtt
+        - RestApi
+        - RootResourceId
+      PathPart: create-resource
+  POSTMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref RestApi
+      ResourceId: !Ref APGResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.header.myheader: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2024-02-02/functions/arn:aws:lambda:us-east-1:529652975574:function:aftab-dev1/invocations
+        IntegrationResponses:
+          - StatusCode: '200'
+  Deployment:
+    DependsOn: POSTMethod
+    Type: 'AWS::ApiGateway::Deployment'
+    Properties:
+      RestApiId: !Ref RestApi
+      Description: My deployment
+      StageName: dev
+
+
+
